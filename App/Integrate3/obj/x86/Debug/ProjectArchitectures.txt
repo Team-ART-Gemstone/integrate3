@@ -1,0 +1,2 @@
+C:\Users\VR Club\Documents\ART\Integrate3\App\GeneratedProjects\UWP\Assembly-CSharp\Assembly-CSharp.csproj;x86
+C:\Users\VR Club\Documents\ART\Integrate3\App\Integrate3\Integrate3.csproj;x86
