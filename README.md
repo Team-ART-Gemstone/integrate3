@@ -1,7 +1,7 @@
 # Integrate3!
 # Setup instructions (starting from scratch):
 
-git clone https://github.com/Team-ART-Gemstone/Hololens.git
+git clone https://github.com/Team-ART-Gemstone/integrate3.git
 
 Use HTTPS unless you have an SSH key set up already.
 
