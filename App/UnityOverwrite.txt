@@ -10,7 +10,7 @@ GeneratedProjects\UWP\Assembly-CSharp\project.json: modified
 Integrate3\App.cs: F8601AE401C3C5FCA8A609955F802542
 Integrate3\Integrate3.csproj: modified
 Integrate3\Integrate3.csproj.user: modified
-Integrate3\Package.appxmanifest: BC9253A2F16FE4956DCDFC300EF40640
+Integrate3\Package.appxmanifest: 70715014F13CD3A79ECB250FAFFA8BE9
 Integrate3\project.json: modified
 Integrate3\Assets\SplashScreen.scale-200.png: A85C1D7624B6902CF8CEBD6F0200A826
 Integrate3\Assets\Square150x150Logo.scale-200.png: E02834B4A5DFB97FF8E212C1CACBB084

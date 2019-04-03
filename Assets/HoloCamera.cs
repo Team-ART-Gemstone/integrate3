@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,7 @@ public class HoloCamera : MonoBehaviour
     // Should make this into function argument later
     public TextMesh textMesh;
     public TextMesh twoMesh;
+    public AudioSource audioSource;
 
 #if UNITY_UWP
     private CognitiveServisesVisionLibrary.CognitiveVisionHelper _cognitiveHelper;
@@ -38,11 +40,9 @@ public class HoloCamera : MonoBehaviour
     public Texture2D TakePhoto()
     {
         Debug.Log("Take Photo");
-
         Texture2D webcamImage = new Texture2D(webcam.width, webcam.height);
         webcamImage.SetPixels(webcam.GetPixels());
-        webcamImage.Apply();
-
+        audioSource.Play();
         return webcamImage;
     }
 
@@ -62,7 +62,8 @@ public class HoloCamera : MonoBehaviour
                 var visionResult = await _cognitiveHelper.start(buffer);
                 var description = _cognitiveHelper.ExtractOcr(visionResult);
 #if NETFX_CORE
-            var correctText = SpellCheckerClient.SpellCheck(description);
+            var incorrectCorrectedPairs = SpellCheckerClient.SpellCheck(description); // This is the "diff"
+            var correctText = SpellCheckerClient.CorrectString(description,incorrectCorrectedPairs);
             twoMesh.text = correctText.Result;
 #endif
             textMesh.text = description;
@@ -75,7 +76,7 @@ public class HoloCamera : MonoBehaviour
             }
 #endif
 
-        }
+    }
 
     public void TakePhotoToPreview(Renderer preview)
     {
