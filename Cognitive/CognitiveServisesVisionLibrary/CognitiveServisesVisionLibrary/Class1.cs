@@ -19,7 +19,7 @@ namespace CognitiveServisesVisionLibrary
         public CognitiveVisionHelper()
         {
             // Replace this with real subscription key when building
-            _subscriptionKey = "fa5bac0cc70e4eaabb60bcaa773c78cf";
+            _subscriptionKey = "haha you thought you were going to get a key, but it was me DIO";
         }
         public ComputerVisionClient GetVisionServiceClient()
         {
