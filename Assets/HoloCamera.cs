@@ -3,6 +3,7 @@ using System.Runtime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.WSA;
 using DiffMatchPatch;
 
 #if UNITY_UWP
@@ -17,9 +18,12 @@ public class HoloCamera : MonoBehaviour
 
     private WebCamTexture webcam;
     // Should make this into function argument later
-    public TextMesh textMesh;
+    public TextMesh textMesh; //(Incorrect Text)
+    public GameObject myQuad;
     public TextMesh twoMesh;
     public AudioSource audioSource;
+
+    private bool myAnchor = false; //Variable to flip to set or destroy anchor
 
 #if UNITY_UWP
     private CognitiveServisesVisionLibrary.CognitiveVisionHelper _cognitiveHelper;
@@ -28,10 +32,25 @@ public class HoloCamera : MonoBehaviour
     Windows.Storage.StorageFile sampleFile;
 #endif
 
+    string[] secondGradeList = {"accident", "bright", "center", "enemy", "field", "greedy", "lonely", "universe", "planet", "worry"};
+    string[] thirdGradeList = {"absorb",  "brief",  "decay", "disease", "flutter", "intelligent",
+         "nursery",  "respect", "solution", "value"};
+    string[] fourthGradeList = {"accurate", "awkward", "blossom", "concern", "descend",  "frantic", "frontier",
+        "modest", "prefer", "request"};
+    string[] fifthGradeList = {"absurd", "character", "decline", "escalate", "feeble",  "immense", "major",
+        "pasture",  "strategy",  "visible"};
+    string[] sixthGradeList = {"allegiance", "convenient", "definitely", "eclipse",
+         "hazardous", "leisure", "loathe", "parody", "quest", "retrieve"};
+
+    string[] wordList; // use setGradeLevel to set
+    Dictionary<int, string> placesToWords;
+    string wordString;
+    int searchLoc;
+
     public void Start()
     {
+        setGradeLevel(0); // default, uses all words
 
-         
         //Diff diff = new Diff();
         //DiffMatchPatch.Diff diff = new Diff();
 
@@ -59,6 +78,7 @@ public class HoloCamera : MonoBehaviour
         picturesFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
 
         sampleFile = await storageFolder.CreateFileAsync("Test.txt", Windows.Storage.CreationCollisionOption.GenerateUniqueName);
+         Windows.Storage.FileIO.WriteTextAsync(sampleFile, "This is a Debug Statement to fill in the top of the file.\n");
     }
 
     public async void WritePhotoToFile(IBuffer buffer, IStorageFile file) {
@@ -102,13 +122,48 @@ public class HoloCamera : MonoBehaviour
             {
                 var visionResult = await _cognitiveHelper.start(buffer);
                 var description = _cognitiveHelper.ExtractOcr(visionResult);
-
-                var incorrectCorrectedPairs = SpellCheckerClient.SpellCheck(description); // This is the "diff"
-                var correctText = SpellCheckerClient.CorrectString(description,incorrectCorrectedPairs.Result);
+                description = description.ToLower().Trim();
                 
-                await Windows.Storage.FileIO.WriteTextAsync(sampleFile, DateTime.Now.ToString() + " | " + description + " | " + correctText +"\n");
-                Debug.Log("og txt: " + description);
-                Debug.Log("correct text: " + correctText);
+            //string twond =  "accident beach bright center discard enemy field greedy idea lonely ocean planet stream tower worry";
+
+            //var incorrectCorrectedPairs = SpellCheckerClient.SpellCheck(description); // This is the "diff"
+            //var correctText = SpellCheckerClient.CorrectString(description,incorrectCorrectedPairs.Result);
+
+            //correctText = correctText.ToUpper();
+
+
+            int correctPosition = dmp.match_main(wordString, description, wordString.Length/2);
+            if(correctPosition != -1) // find location in wordString corresponding to start of desired word
+            {
+                int prev = 0;
+                foreach(int n in placesToWords.Keys)
+                {
+                    if (n <= correctPosition)
+                    {
+                        prev = n;
+                    }
+                    else
+                    {
+                        correctPosition = prev;
+                        break;
+                    }
+                }
+                //searchLoc = correctPosition; // next words searched for are probably going to be near here
+            }
+            Debug.Log("og txt: " + description);
+            Debug.Log(correctPosition);
+            string correctText;
+            try
+            {
+                correctText = placesToWords[correctPosition];
+            } catch
+            {
+                correctText = "Error, try again.\n" + description;
+            }
+            Debug.Log("correct text: " + correctText);
+                await Windows.Storage.FileIO.AppendTextAsync(sampleFile, DateTime.Now.ToString() + " | " + description + " | " + correctText +"\n");
+                
+                
                 if (description.Equals(correctText))
                 {
                     outputText = "<color=lime>" + correctText + "</color>";
@@ -134,7 +189,7 @@ public class HoloCamera : MonoBehaviour
                     
                     Debug.Log(d.ToString());
 
-                    if (d.operation.Equals(Operation.INSERT))//equals insertion
+                    if (d.operation.Equals(Operation.DELETE))//equals insertion
                     {
                         outputText += "<color=red>" + d.text + "</color>";
                     }else if (d.operation.Equals(Operation.EQUAL))//equals equality
@@ -144,7 +199,7 @@ public class HoloCamera : MonoBehaviour
                 }
             }
 
-            twoMesh.text = outputText;
+            twoMesh.text = outputText + "\n" + description;
 
             textMesh.text = description;
                 audioSource.Play();
@@ -172,7 +227,6 @@ public class HoloCamera : MonoBehaviour
         Vector3 scale = preview.transform.localScale;
         scale.x = scale.y * aspectRatio;
         preview.transform.localScale = scale;
-        Debug.Log("OwO");
     }
 
     public void InstantiatePhoto(GameObject prefab)
@@ -180,6 +234,65 @@ public class HoloCamera : MonoBehaviour
         Debug.Log("InstantiatePhoto");
         GameObject go = GameObject.Instantiate(prefab, Camera.main.transform.position + Camera.main.transform.forward * 0.5f, Camera.main.transform.rotation);
         TakePhotoToPreview(go.transform.GetChild(0).GetComponent<Renderer>());
+    }
+
+    /************* ANCHORING THE QUAD INTO SPACE *********************/
+    public void anchor()
+    {
+        audioSource.Play();
+        myAnchor = !myAnchor;
+        Debug.Log(myAnchor.ToString());
+        if (myAnchor)
+        {
+            Debug.Log("cannot move");
+            DestroyImmediate(myQuad.GetComponent<WorldAnchor>());
+            myQuad.AddComponent<WorldAnchor>();
+        } else {
+            Debug.Log("Can Move");
+            DestroyImmediate(myQuad.GetComponent<WorldAnchor>());
+        }
+    }
+
+    public void setGradeLevel(int gradeLevel)
+    {
+        audioSource.Play();
+        switch (gradeLevel)
+        {
+            case 2:
+                wordList = secondGradeList;
+                break;
+            case 3:
+                wordList = thirdGradeList;
+                break;
+            case 4:
+                wordList = fourthGradeList;
+                break;
+            case 5:
+                wordList = fifthGradeList;
+                break;
+            case 6:
+                wordList = sixthGradeList;  
+                break;
+            default:
+                wordList = new string[secondGradeList.Length + thirdGradeList.Length + fourthGradeList.Length + fifthGradeList.Length + sixthGradeList.Length];
+                secondGradeList.CopyTo(wordList, 0);
+                thirdGradeList.CopyTo(wordList, secondGradeList.Length);
+                fourthGradeList.CopyTo(wordList, secondGradeList.Length + thirdGradeList.Length);
+                fifthGradeList.CopyTo(wordList, secondGradeList.Length + thirdGradeList.Length + fourthGradeList.Length);
+                sixthGradeList.CopyTo(wordList, secondGradeList.Length + thirdGradeList.Length + fourthGradeList.Length + fifthGradeList.Length);
+                break;
+        }
+
+        placesToWords = new Dictionary<int, string>();
+        int placeCounter = 0;
+        wordString = "";
+        foreach (string word in wordList)
+        {
+            wordString += word + " ";
+            placesToWords[placeCounter] = word;
+            placeCounter += word.Length + 1;
+        }
+        searchLoc = 0;
     }
 
 }
